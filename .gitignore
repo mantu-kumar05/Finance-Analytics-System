@@ -13,3 +13,12 @@ __pycache__/
 
 # OS files
 .DS_Store
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# SQLite databases
+*.sqlite3
+*.sqlite
