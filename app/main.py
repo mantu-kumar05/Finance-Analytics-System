@@ -15,6 +15,8 @@ from app.users import router as user_router
 
 from app.dependencies import get_current_user
 
+from app.init_db import init_db
+
 
 
 app = FastAPI(
@@ -22,6 +24,9 @@ app = FastAPI(
     version="1.0"
 )
 
+
+# Create database tables if they do not exist
+init_db()
 
 
 # Authentication routes
