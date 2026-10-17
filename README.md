@@ -2,152 +2,131 @@
 
 A Python-based financial management and analytics system that tracks income and expenses, provides REST APIs, performs financial analysis, and generates visualization reports.
 
-The project is built using **FastAPI**, **SQLite**, **Pandas**, **Matplotlib**, and **Streamlit** with JWT based user authentication.
+Built with **FastAPI**, **SQLite**, **Pandas**, **Matplotlib** and **Streamlit**, with JWT-based user authentication.
 
----
+## Features
 
-# Features
-
-- User registration
-- User login
-- JWT authentication
-- Protected REST APIs
-- Add financial transactions
-- View user transactions
-- Delete transactions
-- Calculate total income
-- Calculate total expenses
-- Calculate savings
+- User registration and login
+- JWT authentication with protected REST APIs
+- Add, view and delete financial transactions
+- Total income, total expenses and savings per user
 - Category-wise expense analysis
-- Generate financial charts
+- Generated financial charts
 - Interactive Streamlit dashboard
-- SQLite database integration
-- Automated API testing using Pytest
+- SQLite database, created automatically on first run
+- Automated API testing with Pytest
 
----
+## Tech Stack
 
-# Tech Stack
+| Area | Technologies |
+|---|---|
+| Backend | Python, FastAPI, Pydantic, Uvicorn |
+| Database | SQLite |
+| Authentication | JWT, OAuth2 password flow, Passlib, Bcrypt |
+| Data analysis | Pandas, NumPy |
+| Visualization | Matplotlib, Seaborn, Plotly |
+| Dashboard | Streamlit |
+| Testing | Pytest, FastAPI TestClient |
 
-## Backend
-
-- Python
-- FastAPI
-- Pydantic
-- Uvicorn
-
-## Database
-
-- SQLite
-
-## Authentication
-
-- JWT Authentication
-- OAuth2 Password Flow
-- Passlib
-- Bcrypt
-
-## Data Analysis
-
-- Pandas
-- NumPy
-
-## Visualization
-
-- Matplotlib
-- Seaborn
-- Plotly
-
-## Dashboard
-
-- Streamlit
-
-## Testing
-
-- Pytest
-- FastAPI TestClient
-
----
-
-# Project Structure
+## Project Structure
 
 ```
-Finance-Analytics-System
-
-├── app
-│ ├── main.py # FastAPI API routes
-│ ├── models.py # Request and response models
-│ ├── database.py # Database connection
-│ ├── crud.py # Database CRUD operations
-│ ├── analytics_service.py # User based analytics logic
-│ ├── users.py # Register and Login APIs
-│ ├── auth.py # JWT token creation
-│ ├── security.py # Password hashing
-│ ├── dependencies.py # JWT authentication
-│ ├── migrate.py # Database migration
-│ └── init.py
-│
-├── dashboard
-│ └── app.py # Streamlit dashboard
-│
-├── database
-│ └── finance.db # SQLite database
-│
-├── screenshots
-│ ├── login.png # Login page screenshot
-│ ├── dashboard.png # Dashboard screenshot
-│ ├── expense.png # Expense analysis screenshot
-│ └── add_transaction.png # Add transaction screenshot
-│
-├── tests
-│ └── test_api.py # API test cases
-│
-├── requirements.txt
-└── README.md
+Finance-Analytics-System/
+├── app/
+│   ├── main.py               # FastAPI routes
+│   ├── models.py             # Request and response models
+│   ├── database.py           # Database connection
+│   ├── init_db.py            # Creates tables on startup
+│   ├── crud.py               # Database CRUD operations
+│   ├── analytics_service.py  # User-based analytics logic
+│   ├── analytics.py          # Analytics helpers
+│   ├── charts.py             # Chart generation
+│   ├── users.py              # Register and login APIs
+│   ├── auth.py               # JWT token creation
+│   ├── config.py             # Settings (secret key)
+│   ├── security.py           # Password hashing
+│   ├── dependencies.py       # JWT authentication
+│   ├── migrate.py            # Legacy migration script
+│   ├── insert_data.py        # Sample data script
+│   └── view_data.py          # Database viewer script
+├── dashboard/
+│   └── app.py                # Streamlit dashboard
+├── charts/                   # Generated chart images
+├── screenshots/              # README screenshots
+├── tests/
+│   └── test_api.py           # API tests
+├── Procfile                  # Start command for hosting
+└── requirements.txt
 ```
 
----
+The `database/` folder and `finance.db` file are created automatically the first time the API starts.
 
-# Database Design
-
-## Users Table
-
-Stores user information.
+## Installation and Setup
 
 ```
-user_id
-name
-email
-password
+git clone https://github.com/mantu-kumar05/Finance-Analytics-System.git
+cd Finance-Analytics-System
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
----
+### Environment variables
 
-## Transactions Table
+| Variable | Used by | Default | Description |
+|---|---|---|---|
+| `SECRET_KEY` | API | `dev-only-change-me` | Key used to sign JWT tokens. Always set your own value outside local development. |
+| `API_URL` | Dashboard | `http://127.0.0.1:8000` | Address of the FastAPI backend |
 
-Stores financial transactions.
-
-```
-transaction_id
-user_id
-amount
-category
-transaction_type
-transaction_date
-```
-
----
-
-# Authentication API
-
-## Register User
-
-### POST
+Example (Windows Command Prompt):
 
 ```
-/register
+set SECRET_KEY=replace-with-a-long-random-string
 ```
 
-Request:
+### Run the API
+
+```
+uvicorn app.main:app --reload
+```
+
+- Server: http://127.0.0.1:8000
+- Swagger UI: http://127.0.0.1:8000/docs
+- OpenAPI: http://127.0.0.1:8000/openapi.json
+
+### Run the dashboard
+
+Open a second terminal, activate the virtual environment, and run:
+
+```
+streamlit run dashboard/app.py
+```
+
+Dashboard: http://localhost:8501
+
+## Database Design
+
+**users:** `user_id`, `name`, `email`, `password` (hashed)
+
+**transactions:** `transaction_id`, `user_id`, `amount`, `category`, `transaction_type`, `transaction_date`
+
+## API Reference
+
+All transaction and analytics endpoints require a JWT token.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | Health message |
+| POST | `/register` | Create a user |
+| POST | `/login` | Log in and receive a token |
+| GET | `/transactions` | List the logged-in user's transactions |
+| POST | `/transactions` | Add a transaction |
+| DELETE | `/transactions/{transaction_id}` | Delete a transaction |
+| GET | `/analytics` | Income, expense and savings summary |
+
+### Register
+
+`POST /register`
 
 ```json
 {
@@ -160,29 +139,14 @@ Request:
 Response:
 
 ```json
-{
-  "message": "User registered successfully"
-}
+{ "message": "User registered successfully" }
 ```
 
----
+### Login
 
-# Login API
+`POST /login`
 
-### POST
-
-```
-/login
-```
-
-Request:
-
-```json
-{
-  "username": "mantu@gmail.com",
-  "password": "123456"
-}
-```
+Send `username` (the email) and `password` as **form data** (OAuth2 password flow). In Swagger UI, use the **Authorize** button.
 
 Response:
 
@@ -193,72 +157,9 @@ Response:
 }
 ```
 
-Use this token in Swagger Authorize.
+### Add a transaction
 
----
-
-# API Endpoints
-
-## Home API
-
-### GET
-
-```
-/
-```
-
-Response:
-
-```json
-{
-  "message": "Finance Analytics API Running"
-}
-```
-
----
-
-# Transactions API
-
-All transaction APIs require JWT authentication.
-
----
-
-## Get Transactions
-
-### GET
-
-```
-/transactions
-```
-
-Returns only logged-in user's transactions.
-
-Example:
-
-```json
-[
-  {
-    "transaction_id": 1,
-    "user_id": 1,
-    "amount": 500,
-    "category": "Food",
-    "transaction_type": "Expense",
-    "transaction_date": "2026-08-01"
-  }
-]
-```
-
----
-
-## Add Transaction
-
-### POST
-
-```
-/transactions
-```
-
-Request:
+`POST /transactions`
 
 ```json
 {
@@ -269,57 +170,11 @@ Request:
 }
 ```
 
-Note:
+`user_id` is taken from the JWT token automatically.
 
-`user_id` is automatically taken from JWT token.
+### Analytics
 
-Response:
-
-```json
-{
-  "message": "Transaction added successfully"
-}
-```
-
----
-
-## Delete Transaction
-
-### DELETE
-
-```
-/transactions/{transaction_id}
-```
-
-Example:
-
-```
-/transactions/1
-```
-
-Response:
-
-```json
-{
-  "message": "Transaction deleted successfully"
-}
-```
-
-------
-
-# Financial Analytics API
-
-## Get Analytics
-
-### GET
-
-```
-/analytics
-```
-
-Returns financial summary of logged-in user.
-
-Example Response:
+`GET /analytics`
 
 ```json
 {
@@ -329,221 +184,51 @@ Example Response:
 }
 ```
 
----
+## Streamlit Dashboard
 
-# Streamlit Dashboard
+The dashboard connects to the FastAPI backend and provides:
 
-The project includes an interactive financial dashboard built using **Streamlit**.
+- Register and login tabs with JWT sessions
+- Automatic logout when the session expires
+- Total income, total expenses and savings
+- Transactions table
+- Add-transaction form with a date picker
+- Expense category chart
+- Clear messages when the API is not running
 
-The dashboard connects with FastAPI backend APIs and provides a user-friendly interface for managing and analyzing financial data.
+## Analytics and Visualization
 
-## Dashboard Features
+The system generates a category-wise expense chart and an income vs expense chart, saved in the `charts/` folder.
 
-- JWT based user login
-- View total income
-- View total expenses
-- Calculate savings
-- View transactions
-- Add new transactions
-- Expense category visualization
-- Real-time data from FastAPI APIs
-
-
-## Run Dashboard
-
-Activate virtual environment:
-
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Install dashboard dependencies:
-
-```bash
-pip install streamlit plotly requests
-```
-
-Start FastAPI backend:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Open another terminal and run:
-
-```bash
-streamlit run dashboard/app.py
-```
-
-Dashboard URL:
+## Running Tests
 
 ```
-http://localhost:8501
-```
-
----
-
-# Analytics and Visualization
-
-The system performs financial analysis and generates visualization reports.
-
-## Category Wise Expense Chart
-
-Shows expenses based on different categories.
-
-Example:
-
-```
-Food      500
-Travel    800
-Shopping  300
-```
-
-## Income vs Expense Chart
-
-Shows comparison between total income and total expenses.
-
-Generated charts:
-
-```
-charts/
-
-├── expense_chart.png
-└── income_expense.png
-```
-
----
-
-# Installation and Setup
-
-## Clone Repository
-
-```bash
-git clone https://github.com/Mantu-231/Finance-Analytics-System.git
-```
-
-Move into project directory:
-
-```bash
-cd Finance-Analytics-System
-```
-
----
-
-# Create Virtual Environment
-
-```bash
-python -m venv venv
-```
-
-Activate environment:
-
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
----
-
-# Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-# Run Application
-
-Start FastAPI server:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Server:
-
-```
-http://127.0.0.1:8000
-```
-
----
-
-# API Documentation
-
-Swagger UI:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-OpenAPI:
-
-```
-http://127.0.0.1:8000/openapi.json
-```
-
----
-
-# Running Tests
-
-Run automated tests:
-
-```bash
 pytest
 ```
 
-Current tests include:
+Current tests cover the home, transactions and analytics endpoints.
 
-- Home endpoint test
-- Transactions endpoint test
-- Analytics endpoint test
-
-Example result:
-
-```
-3 passed
-```
-
----
-
-# Future Improvements
+## Future Improvements
 
 - Monthly financial reports
 - Cloud database integration
 - Docker deployment
-- Advanced dashboard improvements
 - Machine learning based expense prediction
-- Cloud hosting deployment
 
----
+## Screenshots
 
-# Screenshots
-
-## Login Page
-
+### Login Page
 ![Login](screenshots/login.png)
 
-
-## Finance Dashboard
-
+### Finance Dashboard
 ![Dashboard](screenshots/dashboard.png)
 
-
-## Expense Analysis
-
+### Expense Analysis
 ![Expense Analysis](screenshots/expense.png)
 
-
-## Add Transaction
-
+### Add Transaction
 ![Add Transaction](screenshots/add_transaction.png)
 
----
-
-# Author
+## Author
 
 **Mantu Kumar**

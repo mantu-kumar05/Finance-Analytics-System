@@ -3,8 +3,8 @@ from fastapi.security import OAuth2PasswordBearer
 
 from jose import jwt, JWTError
 
+from app.config import SECRET_KEY
 
-SECRET_KEY = "finance-secret-key"
 
 ALGORITHM = "HS256"
 

@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 
 from jose import jwt
 
+from app.config import SECRET_KEY
 
-SECRET_KEY = "finance-secret-key"
 
 ALGORITHM = "HS256"
 
