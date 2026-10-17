@@ -1,10 +1,16 @@
+import os
+
 import streamlit as st
 import requests
 import plotly.express as px
 
 
-API_URL = "https://finance-analytics-system.onrender.com"
+# ================= API URL =================
 
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+
+
+# ================= PAGE CONFIG =================
 
 st.set_page_config(
     page_title="Finance Analytics Dashboard",
@@ -16,178 +22,385 @@ st.set_page_config(
 st.title("💰 Finance Analytics Dashboard")
 
 
-# Token storage
+# ================= TOKEN STORAGE =================
+
 if "token" not in st.session_state:
     st.session_state.token = None
 
 
-
-# ================= LOGIN =================
+# ============================================================
+# LOGIN / REGISTER
+# ============================================================
 
 if st.session_state.token is None:
 
-    st.subheader("Login")
-
-    email = st.text_input("Email")
-
-    password = st.text_input(
-        "Password",
-        type="password"
+    login_tab, register_tab = st.tabs(
+        ["🔐 Login", "📝 Register"]
     )
 
 
-    if st.button("Login"):
+    # ========================================================
+    # LOGIN
+    # ========================================================
 
-        # OAuth2 login requires form data
-        response = requests.post(
-            f"{API_URL}/login",
-            data={
-                "username": email,
-                "password": password
-            }
+    with login_tab:
+
+        st.subheader("Login")
+
+        email = st.text_input(
+            "Email",
+            key="login_email"
+        )
+
+        password = st.text_input(
+            "Password",
+            type="password",
+            key="login_password"
         )
 
 
-        if response.status_code == 200:
+        if st.button(
+            "Login",
+            key="login_button"
+        ):
 
-            data = response.json()
+            try:
 
-            st.session_state.token = data["access_token"]
-
-            st.success("Login successful")
-
-            st.rerun()
-
-
-        else:
-
-            st.error(
-                f"Login failed: {response.text}"
-            )
+                # OAuth2 login requires form data
+                response = requests.post(
+                    f"{API_URL}/login",
+                    data={
+                        "username": email,
+                        "password": password
+                    }
+                )
 
 
+                if response.status_code == 200:
+
+                    data = response.json()
+
+                    st.session_state.token = data["access_token"]
+
+                    st.success(
+                        "Login successful!"
+                    )
+
+                    st.rerun()
+
+
+                else:
+
+                    st.error(
+                        f"Login failed: {response.text}"
+                    )
+
+
+            except requests.exceptions.ConnectionError:
+
+                st.error(
+                    "FastAPI server is not running. "
+                    "Please start uvicorn first."
+                )
+
+
+            except Exception as e:
+
+                st.error(
+                    f"Error: {str(e)}"
+                )
+
+
+    # ========================================================
+    # REGISTER
+    # ========================================================
+
+    with register_tab:
+
+        st.subheader("Create New Account")
+
+        name = st.text_input(
+            "Name",
+            key="register_name"
+        )
+
+        register_email = st.text_input(
+            "Email",
+            key="register_email"
+        )
+
+        register_password = st.text_input(
+            "Password",
+            type="password",
+            key="register_password"
+        )
+
+
+        if st.button(
+            "Create Account",
+            key="register_button"
+        ):
+
+            # Basic validation
+
+            if not name:
+
+                st.warning(
+                    "Please enter your name."
+                )
+
+            elif not register_email:
+
+                st.warning(
+                    "Please enter your email."
+                )
+
+            elif not register_password:
+
+                st.warning(
+                    "Please enter a password."
+                )
+
+            else:
+
+                try:
+
+                    response = requests.post(
+                        f"{API_URL}/register",
+                        json={
+                            "name": name,
+                            "email": register_email,
+                            "password": register_password
+                        }
+                    )
+
+
+                    if response.status_code == 200:
+
+                        st.success(
+                            "Account created successfully! "
+                            "Please login."
+                        )
+
+
+                    else:
+
+                        st.error(
+                            f"Registration failed: "
+                            f"{response.text}"
+                        )
+
+
+                except requests.exceptions.ConnectionError:
+
+                    st.error(
+                        "FastAPI server is not running. "
+                        "Please start uvicorn first."
+                    )
+
+
+                except Exception as e:
+
+                    st.error(
+                        f"Error: {str(e)}"
+                    )
+
+
+    # Stop here until user logs in
     st.stop()
 
 
-
-# ================= AUTH HEADER =================
+# ============================================================
+# AUTH HEADER
+# ============================================================
 
 headers = {
     "Authorization": f"Bearer {st.session_state.token}"
 }
 
 
-
-# ================= ANALYTICS =================
+# ============================================================
+# FINANCIAL SUMMARY
+# ============================================================
 
 st.subheader("📊 Financial Summary")
 
 
-analytics_response = requests.get(
-    f"{API_URL}/analytics",
-    headers=headers
-)
+try:
 
-
-if analytics_response.status_code == 200:
-
-    analytics = analytics_response.json()
-
-
-    col1, col2, col3 = st.columns(3)
-
-
-    col1.metric(
-        "Total Income",
-        analytics["total_income"]
+    analytics_response = requests.get(
+        f"{API_URL}/analytics",
+        headers=headers
     )
 
 
-    col2.metric(
-        "Total Expense",
-        analytics["total_expense"]
-    )
+    if analytics_response.status_code == 200:
+
+        analytics = analytics_response.json()
 
 
-    col3.metric(
-        "Savings",
-        analytics["savings"]
-    )
+        col1, col2, col3 = st.columns(3)
 
 
-else:
-
-    st.error(
-        analytics_response.text
-    )
-
-
-
-# ================= TRANSACTIONS =================
-
-st.subheader("💳 Transactions")
-
-
-transaction_response = requests.get(
-    f"{API_URL}/transactions",
-    headers=headers
-)
-
-
-if transaction_response.status_code == 200:
-
-    transactions = transaction_response.json()
-
-
-    if transactions:
-
-        st.dataframe(
-            transactions
+        col1.metric(
+            "💰 Total Income",
+            analytics["total_income"]
         )
 
 
-        fig = px.pie(
-            transactions,
-            names="category",
-            values="amount",
-            title="Expense Category"
+        col2.metric(
+            "💸 Total Expense",
+            analytics["total_expense"]
         )
 
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
+        col3.metric(
+            "💵 Savings",
+            analytics["savings"]
         )
+
+
+    elif analytics_response.status_code == 401:
+
+        st.error(
+            "Session expired. Please login again."
+        )
+
+        st.session_state.token = None
+
+        st.rerun()
 
 
     else:
 
-        st.info(
-            "No transactions found"
+        st.error(
+            analytics_response.text
         )
 
 
-else:
+except requests.exceptions.ConnectionError:
 
     st.error(
-        transaction_response.text
+        "Cannot connect to FastAPI server."
     )
 
 
+# ============================================================
+# TRANSACTIONS
+# ============================================================
 
-# ================= ADD TRANSACTION =================
+st.subheader("💳 Transactions")
+
+
+try:
+
+    transaction_response = requests.get(
+        f"{API_URL}/transactions",
+        headers=headers
+    )
+
+
+    if transaction_response.status_code == 200:
+
+        transactions = transaction_response.json()
+
+
+        if transactions:
+
+            st.dataframe(
+                transactions,
+                use_container_width=True
+            )
+
+
+            # ================================================
+            # EXPENSE CHART
+            # ================================================
+
+            expenses = [
+                transaction
+                for transaction in transactions
+                if transaction["transaction_type"] == "Expense"
+            ]
+
+
+            if expenses:
+
+                st.subheader(
+                    "📈 Expense Category Analysis"
+                )
+
+
+                fig = px.pie(
+                    expenses,
+                    names="category",
+                    values="amount",
+                    title="Expense Category"
+                )
+
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True
+                )
+
+
+            else:
+
+                st.info(
+                    "No expense transactions available."
+                )
+
+
+        else:
+
+            st.info(
+                "No transactions found."
+            )
+
+
+    elif transaction_response.status_code == 401:
+
+        st.error(
+            "Session expired. Please login again."
+        )
+
+        st.session_state.token = None
+
+        st.rerun()
+
+
+    else:
+
+        st.error(
+            transaction_response.text
+        )
+
+
+except requests.exceptions.ConnectionError:
+
+    st.error(
+        "Cannot connect to FastAPI server."
+    )
+
+
+# ============================================================
+# ADD TRANSACTION
+# ============================================================
 
 st.subheader("➕ Add Transaction")
 
 
 amount = st.number_input(
     "Amount",
-    min_value=0.0
+    min_value=0.0,
+    step=100.0
 )
 
 
 category = st.text_input(
-    "Category"
+    "Category",
+    placeholder="Food, Travel, Shopping..."
 )
 
 
@@ -200,51 +413,90 @@ transaction_type = st.selectbox(
 )
 
 
-transaction_date = st.text_input(
-    "Date",
-    "2026-08-03"
+transaction_date = st.date_input(
+    "Date"
 )
 
 
+if st.button(
+    "Add Transaction",
+    key="add_transaction_button"
+):
 
-if st.button("Add Transaction"):
+    if amount <= 0:
 
-
-    response = requests.post(
-        f"{API_URL}/transactions",
-        headers=headers,
-        json={
-            "amount": amount,
-            "category": category,
-            "transaction_type": transaction_type,
-            "transaction_date": transaction_date
-        }
-    )
-
-
-    if response.status_code == 200:
-
-        st.success(
-            "Transaction added successfully"
+        st.warning(
+            "Amount must be greater than 0."
         )
 
-        st.rerun()
+    elif not category:
 
+        st.warning(
+            "Please enter a category."
+        )
 
     else:
 
-        st.error(
-            response.text
-        )
+        try:
+
+            response = requests.post(
+                f"{API_URL}/transactions",
+                headers=headers,
+                json={
+                    "amount": amount,
+                    "category": category,
+                    "transaction_type": transaction_type,
+                    "transaction_date": str(
+                        transaction_date
+                    )
+                }
+            )
 
 
+            if response.status_code == 200:
 
-# ================= LOGOUT =================
+                st.success(
+                    "Transaction added successfully!"
+                )
 
-st.sidebar.title("Account")
+                st.rerun()
 
 
-if st.sidebar.button("Logout"):
+            elif response.status_code == 401:
+
+                st.error(
+                    "Session expired. Please login again."
+                )
+
+                st.session_state.token = None
+
+                st.rerun()
+
+
+            else:
+
+                st.error(
+                    response.text
+                )
+
+
+        except requests.exceptions.ConnectionError:
+
+            st.error(
+                "Cannot connect to FastAPI server."
+            )
+
+
+# ============================================================
+# LOGOUT
+# ============================================================
+
+st.sidebar.title("👤 Account")
+
+
+if st.sidebar.button(
+    "Logout"
+):
 
     st.session_state.token = None
 
